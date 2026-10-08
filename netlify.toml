@@ -1,0 +1,25 @@
+# Fully static: no build step. Netlify just publishes public/.
+# public/data/ is generated locally by `python tools/build_data.py` and committed.
+[build]
+  publish = "public"
+
+# Security headers on every page
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Wage and geometry files only change once a year (July): cache for a day, then revalidate
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+
+# CSS/JS are not fingerprinted, so let browsers revalidate daily
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wage Level Map</title>
+<meta name="description" content="Prevailing wage Levels I to IV for every occupation, by state and county, from the US Department of Labor OFLC wage data used for H-1B and PERM filings.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232a3f8f'/%3E%3Cpath d='M6 22l6-8 5 5 9-11' fill='none' stroke='%23eef3d2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Wage Level Map</h1>
+    <p class="sub">Prevailing wage Levels I to IV for any occupation, by state and county. DOL OFLC wage data used for H-1B and PERM filings, <span id="year">current wage year</span>.</p>
+  </header>
+
+  <div class="controls">
+    <label class="field" for="occ">
+      <span>Occupation</span>
+      <input id="occ" list="occlist" autocomplete="off" spellcheck="false" placeholder="Search by title or SOC code">
+      <datalist id="occlist"></datalist>
+    </label>
+    <div class="grp"><span id="lvlabel">Level</span><div class="seg" id="lv" role="group" aria-labelledby="lvlabel"></div></div>
+    <div class="grp"><span id="unitlabel">Show</span><div class="seg" id="unit" role="group" aria-labelledby="unitlabel"></div></div>
+  </div>
+
+  <nav class="crumbs" id="crumbs" aria-label="Map level"></nav>
+
+  <div class="main">
+    <section class="mapbox" aria-label="Map">
+      <div id="msg" class="msg" hidden></div>
+      <svg id="map" role="group" aria-label="Wage map"></svg>
+      <div class="legend"><span id="lmin"></span><div class="bar" id="bar"></div><span id="lmax"></span></div>
+      <p class="legcap" id="legcap"></p>
+    </section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <p class="foot">Wages are set per OES area (a metro area or a nonmetropolitan region), so every county in an area shares the same figures. Annual is hourly × 2080 hours. Source: <a href="https://flag.dol.gov/wage-data/wage-data-downloads">DOL Office of Foreign Labor Certification wage files</a>; county outlines from US Census cartographic boundaries. This is an unofficial reference. Confirm the wage on <a href="https://flag.dol.gov">flag.dol.gov</a> before filing.</p>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
