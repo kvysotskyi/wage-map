@@ -200,12 +200,68 @@ def build_geo(counties_dir, states_dir):
     return index  # statefp -> {NAMELSAD: GEOID}
 
 
+# ---------- employment (BLS OEWS) ----------
+def num_or_none(v, cast):
+    try:
+        return cast(v)
+    except (TypeError, ValueError):   # BLS prints "**" for suppressed cells and "#" for top-coded ones
+        return None
+
+
+def load_employment():
+    """soc -> {"nat": national employment, "areas": {area: [employment, location quotient]}}.
+
+    Source: BLS OEWS "all data" workbook (manual download, the BLS site rejects scripts):
+      https://www.bls.gov/oes/tables.htm  ->  May <year>, "All data"  ->  raw/oesm25all.zip
+    Parsing the 78 MB workbook takes a few minutes, so the filtered rows are cached in raw/oews_emp.csv.
+    """
+    cache = RAW / "oews_emp.csv"
+    if not cache.exists():
+        z = RAW / "oesm25all.zip"
+        if not z.exists():
+            print("no", z.name, "- skipping employment data")
+            return {}
+        import openpyxl
+        d = unzip(z)
+        book = next(d.rglob("all_data_M_*.xlsx"))
+        print("reading", book.name, "(a few minutes)")
+        wb = openpyxl.load_workbook(book, read_only=True)
+        ws = wb[wb.sheetnames[0]]
+        rows = ws.iter_rows(values_only=True)
+        head = list(next(rows))
+        ix = {k: head.index(k) for k in ("AREA", "AREA_TYPE", "PRIM_STATE", "I_GROUP", "O_GROUP", "OCC_CODE", "TOT_EMP", "LOC_QUOTIENT")}
+        with open(cache, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["area", "type", "state", "soc", "emp", "lq"])
+            for r in rows:
+                if r[ix["O_GROUP"]] != "detailed" or r[ix["I_GROUP"]] != "cross-industry":
+                    continue
+                if str(r[ix["AREA_TYPE"]]) not in ("1", "2", "4", "6"):   # national, state, metro, nonmetro
+                    continue
+                w.writerow([r[ix["AREA"]], r[ix["AREA_TYPE"]], r[ix["PRIM_STATE"]], r[ix["OCC_CODE"]], r[ix["TOT_EMP"]], r[ix["LOC_QUOTIENT"]]])
+        wb.close()
+    out = {}
+    with open(cache, encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            e = num_or_none(r["emp"], lambda x: int(float(x)))
+            q = num_or_none(r["lq"], float)
+            o = out.setdefault(r["soc"], {"nat": None, "areas": {}, "states": {}})
+            v = [e, None if q is None else round(q, 2)]
+            if r["area"] == "99":
+                o["nat"] = e
+            elif r["type"] == "2":
+                o["states"][r["state"]] = v
+            else:
+                o["areas"][r["area"].lstrip("0")] = v   # OEWS pads nonmetro codes ("0100001"), OFLC does not
+    return out
+
+
 # ---------- wages ----------
 def num(s):
     return round(float(s), 2) if s not in ("", None) else None
 
 
-def build_wages(wdir, name_index):
+def build_wages(wdir, name_index, emp):
     wages = OUT / "wages"
     if wages.exists():
         shutil.rmtree(wages)
@@ -250,9 +306,11 @@ def build_wages(wdir, name_index):
     for soc, areas in sorted(per_soc.items()):
         title, desc = titles.get(soc, (soc, ""))
         socs.append([soc, title])
+        e = emp.get(soc, {"nat": None, "areas": {}, "states": {}})
         (wages / f"{soc}.json").write_text(
-            json.dumps({"soc": soc, "title": title, "desc": desc, "areas": areas}, separators=(",", ":")),
-            encoding="utf-8")
+            json.dumps({"soc": soc, "title": title, "desc": desc, "areas": areas,
+                        "nat": e["nat"], "states": e["states"], "emp": {a: v for a, v in e["areas"].items() if a in areas}},
+                       separators=(",", ":")), encoding="utf-8")
     print("wage files:", len(socs), "occupations,", sum(f.stat().st_size for f in wages.glob("*.json")) // 1024, "KB")
 
     used = {a for a in county_area.values()}
@@ -271,7 +329,7 @@ def main():
     cdir = unzip(fetch(CENSUS.format("county"), RAW / "cb_2023_us_county_500k.zip"))
     sdir = unzip(fetch(CENSUS.format("state"), RAW / "cb_2023_us_state_500k.zip"))
     idx = build_geo(cdir, sdir)
-    n = build_wages(wdir, idx)
+    n = build_wages(wdir, idx, load_employment())
     start, end = a.year.split("-")
     (OUT / "meta.json").write_text(json.dumps({
         "wageYear": f"July {start} to June 20{end}", "occupations": n,

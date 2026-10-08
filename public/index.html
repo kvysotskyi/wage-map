@@ -24,8 +24,7 @@
       <input id="occ" list="occlist" autocomplete="off" spellcheck="false" placeholder="Search by title or SOC code">
       <datalist id="occlist"></datalist>
     </label>
-    <div class="grp"><span id="lvlabel">Level</span><div class="seg" id="lv" role="group" aria-labelledby="lvlabel"></div></div>
-    <div class="grp"><span id="unitlabel">Show</span><div class="seg" id="unit" role="group" aria-labelledby="unitlabel"></div></div>
+    <div class="grp"><span id="lvlabel">Wage level, or your salary</span><div class="seg" id="lv" role="group" aria-labelledby="lvlabel"></div></div>
   </div>
 
   <nav class="crumbs" id="crumbs" aria-label="Map level"></nav>
@@ -39,6 +38,14 @@
     </section>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
+
+  <details class="assume">
+    <summary>How the H-1B lottery estimate works</summary>
+    <p>Since the FY 2027 cap season, USCIS enters each H-1B registration into the lottery once to four times, depending on the highest OEWS wage level the offered salary meets for that occupation and work location: Level I one entry, II two, III three, IV four. The draw is still random. A salary below Level I is under the prevailing wage and cannot be filed.</p>
+    <p>The chance shown treats every entry as an independent draw that succeeds with the probability below, so n entries give 1 − (1 − p)<sup>n</sup>. The real chance depends on how many registrations come in at each level, which is unknown before the season. Set the number to match what you expect.</p>
+    <label for="p1">Chance of a single Level I entry, %</label>
+    <input id="p1" type="number" min="1" max="90" step="1" value="16">
+  </details>
 
   <p class="foot">Wages are set per OES area (a metro area or a nonmetropolitan region), so every county in an area shares the same figures. Annual is hourly × 2080 hours. Source: <a href="https://flag.dol.gov/wage-data/wage-data-downloads">DOL Office of Foreign Labor Certification wage files</a>; county outlines from US Census cartographic boundaries. This is an unofficial reference. Confirm the wage on <a href="https://flag.dol.gov">flag.dol.gov</a> before filing.</p>
 </div>

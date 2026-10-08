@@ -24,6 +24,15 @@ netlify.toml               publish = public, security + cache headers
 The page loads only `occupations`, `areas`, `county-area`, `meta`, `states.json` up front, then one
 `wages/<SOC>.json` and one `counties/<ST>.json` as the user picks an occupation or state.
 
+## Jobs data (BLS OEWS)
+
+Each `wages/<SOC>.json` also holds employment: `emp` (per wage area: `[jobs, location quotient]`),
+`states` (same, per state) and `nat` (national jobs). Source: BLS OEWS May 2025 "all data" workbook.
+The BLS site rejects scripts, so download it by hand from https://www.bls.gov/oes/tables.htm
+(May 2025, "All data") and save it as `raw/oesm25all.zip`. The first build parses the 78 MB workbook
+(a few minutes) and caches the filtered rows in `raw/oews_emp.csv`. Without the zip the build skips jobs data.
+The second number in each pair is the BLS location quotient (1.0 = national share). The UI does not show it; the data is kept in case it is wanted later. `null` = suppressed by BLS.
+
 ## Update each July (new wage year)
 
 ```bash
